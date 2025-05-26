@@ -1,0 +1,103 @@
+### 🔥 Build ###
+.gradle/
+build/
+out/
+bin/
+!gradle/wrapper/gradle-wrapper.jar
+
+### 🛠 IDEs ###
+# IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+*.swm
+*.swn
+*.swo
+*.swp
+
+# Eclipse
+.classpath
+.project
+.settings/
+.metadata/
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### 📦 Logs/Temp ###
+*.log
+*.tmp
+*.bak
+*.orig
+*.rej
+*~
+*.pid
+
+### 🐳 Docker ###
+docker-compose.override.yml
+*.dockerignore
+docker/data/
+
+### 🌿 Environment ###
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+application-*.yml
+!application.yml
+
+### 🗃 Database ###
+*.db
+*.sql
+/h2/
+/db/
+/database/
+/derby.log
+
+### 🧪 Test ###
+/target/
+/test-output/
+/coverage/
+
+### 🔐 Secrets ###
+*.keystore
+*.jks
+*.p12
+*.cert
+*.key
+
+### 📝 Misc ###
+.DS_Store
+Thumbs.db
+.attach_pid*
+*.versionsBackup
+*.classpath.save
+*.project.save
+*.swp
+*.swo
+*~
+~$*
+
+### 🚀 Spring Boot ###
+!/src/main/resources/application.yml
+!/src/test/resources/application-test.yml
+
+### 📁 Seu Projeto Específico ###
+/config/
+!/src/main/resources/config/
+*.cache
+*.prefs
+*.springBeans
