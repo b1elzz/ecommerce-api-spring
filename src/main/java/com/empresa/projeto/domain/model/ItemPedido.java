@@ -12,9 +12,13 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class ItemPedido {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Pedido pedido;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Produto produto;
