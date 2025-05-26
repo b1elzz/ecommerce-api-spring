@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/produtos")
 @RequiredArgsConstructor
@@ -18,7 +20,17 @@ public class ProdutoController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProdutoResponse> criarProduto(@RequestBody @Valid ProdutoRequest request) {
+    public ResponseEntity<ProdutoResponse> criar(@RequestBody @Valid ProdutoRequest request) {
         return ResponseEntity.ok(produtoService.criar(request));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProdutoResponse>> listarTodos() {
+        return ResponseEntity.ok(produtoService.listarTodos());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ProdutoResponse> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(produtoService.buscarPorId(id));
     }
 }
