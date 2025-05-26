@@ -4,12 +4,15 @@
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.0-green)]()
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-orange)]()
 
-## Tecnologias Principais
-- **Backend**: Spring Boot 3 + Spring Security + JWT
-- **Banco de Dados**: PostgreSQL
-- **Cache**: Redis
-- **Mensageria**: RabbitMQ
-- **Ferramentas**: Docker, Lombok, MapStruct
+## 🛠 Stack Tecnológico
+
+| Camada           | Tecnologias                                                                 |
+|------------------|-----------------------------------------------------------------------------|
+| **Core**         | Java 17 • Spring Boot 3 • Lombok • MapStruct                                |
+| **Segurança**    | Spring Security • JWT • BCrypt                                              |
+| **Banco**        | PostgreSQL • Hibernate • Spring Data JPA                                    |
+| **Infra**        | Docker • Redis (cache) • RabbitMQ (mensageria)                              |
+| **CI/CD**        | GitHub Actions                                                              |
 
 ## Como Executar
 

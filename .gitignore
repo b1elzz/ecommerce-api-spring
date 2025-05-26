@@ -5,6 +5,15 @@ out/
 bin/
 !gradle/wrapper/gradle-wrapper.jar
 
+### 🧹 Gradle ###
+!gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+.gradle/
+build/
+
+### 🐘 PostgreSQL ###
+/postgres_data/
+
 ### 🛠 IDEs ###
 # IntelliJ
 .idea/
