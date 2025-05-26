@@ -1,14 +1,46 @@
-name: Java CI
+name: Java CI with PostgreSQL and Redis
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: projeto
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7.0
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -17,11 +49,40 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Grant execute permission for gradlew
+      - name: Wait for PostgreSQL service to be ready
+        run: |
+          for i in {1..15}; do
+            if pg_isready -h localhost -p 5432 -U postgres; then
+              echo "PostgreSQL is ready!"
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL... Attempt $i"
+            sleep 3
+          done
+          echo "PostgreSQL failed to start"
+          exit 1
+
+      - name: Install redis-cli
+        run: sudo apt-get update && sudo apt-get install -y redis-tools
+
+      - name: Wait for Redis service to be ready
+        run: |
+          for i in {1..10}; do
+            if redis-cli ping | grep -q PONG; then
+              echo "Redis is ready!"
+              exit 0
+            fi
+            echo "Waiting for Redis... Attempt $i"
+            sleep 3
+          done
+          echo "Redis failed to start"
+          exit 1
+
+      - name: Grant execute permission for Gradle wrapper
         run: chmod +x gradlew
 
       - name: Build with Gradle
         run: ./gradlew build --stacktrace --no-daemon
 
-      - name: Run Tests
+      - name: Run tests
         run: ./gradlew test --no-daemon
