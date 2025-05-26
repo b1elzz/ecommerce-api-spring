@@ -40,4 +40,4 @@ public class PedidoController {
             @RequestParam @Valid Pedido.Status status) {
         return pedidoService.atualizarStatus(id, status);
     }
-}}
+}

@@ -61,7 +61,6 @@ tasks.named('bootBuildImage') {
 	builder = 'paketobuildpacks/builder-jammy-base:latest'
 }
 
-
 sonarqube {
 	properties {
 		property "sonar.projectKey", "b1elzz_ecommerce-api-spring"
@@ -69,18 +68,17 @@ sonarqube {
 		property "sonar.host.url", "https://sonarcloud.io"
 		property "sonar.login", System.getenv("SONAR_TOKEN")
 	}
+}
 
 pmd {
 	toolVersion = '6.52.0'
-	ruleSets = []
+	ruleSets = [] // desabilita regras padrão
 	ruleSetFiles = files('config/pmd/ruleset.xml')
-	}
+}
 
-	tasks.withType(Pmd) {
-		reports {
-			xml.required = false
-			html.required = true
-		}
+tasks.withType(Pmd) {
+	reports {
+		xml.required.set(false)
+		html.required.set(true)
 	}
-
 }

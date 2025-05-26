@@ -92,7 +92,4 @@ jobs:
       - name: Run PMD
         run: ./gradlew pmdMain pmdTest --no-daemon
 
-      - name: SonarCloud Analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonarqube --no-daemon
+
