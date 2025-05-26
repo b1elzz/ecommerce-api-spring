@@ -2,6 +2,7 @@ package com.empresa.projeto.application.service;
 
 import com.empresa.projeto.application.dto.PedidoRequest;
 import com.empresa.projeto.application.dto.PedidoResponse;
+import com.empresa.projeto.application.mapper.PedidoMapper;
 import com.empresa.projeto.domain.model.*;
 import com.empresa.projeto.domain.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -9,10 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,59 +20,77 @@ public class PedidoService {
     private final ProdutoRepository produtoRepository;
     private final UsuarioRepository usuarioRepository;
     private final ItemPedidoRepository itemPedidoRepository;
+    private final PedidoMapper pedidoMapper;
 
     @Transactional
     public PedidoResponse criar(PedidoRequest request) {
-        Usuario cliente = usuarioRepository.findById(request.clienteId())
-                .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado"));
-
-        Pedido pedido = new Pedido();
-        pedido.setCliente(cliente);
-        pedido.setDataCriacao(LocalDateTime.now());
-        pedido.setStatus(Pedido.Status.CRIADO);
-        pedido.setItens(new ArrayList<>());
+        Pedido pedido = pedidoMapper.toEntity(request);
+        pedido.setCliente(usuarioRepository.findById(request.clienteId())
+                .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado")));
 
         pedidoRepository.save(pedido);
 
+        processarItensPedido(request, pedido);
+        return pedidoMapper.toResponse(pedidoRepository.save(pedido));
+    }
+
+    private void processarItensPedido(PedidoRequest request, Pedido pedido) {
         BigDecimal total = BigDecimal.ZERO;
 
         for (PedidoRequest.ItemPedidoRequest itemRequest : request.itens()) {
             Produto produto = produtoRepository.findById(itemRequest.produtoId())
-                    .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado"));
+                    .orElseThrow(() -> new IllegalArgumentException("Produto ID " + itemRequest.produtoId() + " não encontrado"));
 
-            if (produto.getEstoque() < itemRequest.quantidade()) {
-                throw new IllegalArgumentException("Estoque insuficiente");
-            }
+            validarEstoque(produto, itemRequest.quantidade());
+            atualizarEstoque(produto, itemRequest.quantidade());
 
-            produto.setEstoque(produto.getEstoque() - itemRequest.quantidade());
-
-            ItemPedido item = new ItemPedido();
-            item.setPedido(pedido);
-            item.setProduto(produto);
-            item.setQuantidade(itemRequest.quantidade());
-            item.setPrecoUnitario(produto.getPreco());
-
-            itemPedidoRepository.save(item);
-            pedido.getItens().add(item);
-            total = total.add(produto.getPreco().multiply(BigDecimal.valueOf(itemRequest.quantidade())));
+            ItemPedido item = criarItemPedido(pedido, produto, itemRequest.quantidade());
+            total = total.add(calcularSubtotal(item));
         }
 
         pedido.setTotal(total);
-        return toResponse(pedidoRepository.save(pedido));
+    }
+
+    private ItemPedido criarItemPedido(Pedido pedido, Produto produto, Integer quantidade) {
+        ItemPedido item = ItemPedido.builder()
+                .pedido(pedido)
+                .produto(produto)
+                .quantidade(quantidade)
+                .precoUnitario(produto.getPreco())
+                .build();
+
+        itemPedidoRepository.save(item);
+        pedido.getItens().add(item);
+        return item;
+    }
+
+    private void validarEstoque(Produto produto, Integer quantidade) {
+        if (produto.getEstoque() < quantidade) {
+            throw new IllegalArgumentException("Estoque insuficiente para produto: " + produto.getNome());
+        }
+    }
+
+    private void atualizarEstoque(Produto produto, Integer quantidade) {
+        produto.setEstoque(produto.getEstoque() - quantidade);
+        produtoRepository.save(produto);
+    }
+
+    private BigDecimal calcularSubtotal(ItemPedido item) {
+        return item.getPrecoUnitario().multiply(BigDecimal.valueOf(item.getQuantidade()));
     }
 
     @Transactional(readOnly = true)
     public List<PedidoResponse> listarPorCliente(Long clienteId) {
         return pedidoRepository.findByClienteId(clienteId).stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+                .map(pedidoMapper::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public PedidoResponse buscarPorId(Long id) {
         return pedidoRepository.findById(id)
-                .map(this::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado"));
+                .map(pedidoMapper::toResponse)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido ID " + id + " não encontrado"));
     }
 
     @Transactional
@@ -83,26 +99,6 @@ public class PedidoService {
                 .orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado"));
 
         pedido.setStatus(status);
-        Pedido pedidoAtualizado = pedidoRepository.save(pedido);
-        return toResponse(pedidoAtualizado);
+        return pedidoMapper.toResponse(pedidoRepository.save(pedido));
     }
-
-    private PedidoResponse toResponse(Pedido pedido) {
-        return new PedidoResponse(
-                pedido.getId(),
-                pedido.getCliente().getNome(),
-                pedido.getDataCriacao(),
-                pedido.getTotal(),
-                pedido.getStatus().name(),
-                pedido.getItens().stream()
-                        .map(item -> new PedidoResponse.ItemPedidoResponse(
-                                item.getProduto().getNome(),
-                                item.getQuantidade(),
-                                item.getPrecoUnitario(),
-                                item.getPrecoUnitario().multiply(BigDecimal.valueOf(item.getQuantidade()))
-                        ))
-                        .toList()
-        );
-    }
-
 }
