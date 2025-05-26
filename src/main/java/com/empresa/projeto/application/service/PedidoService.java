@@ -7,13 +7,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
 public class PedidoService {
-
     private final PedidoRepository pedidoRepository;
     private final ProdutoRepository produtoRepository;
     private final UsuarioRepository usuarioRepository;
@@ -28,7 +28,10 @@ public class PedidoService {
                 .cliente(cliente)
                 .dataCriacao(LocalDateTime.now())
                 .status(Pedido.Status.CRIADO)
+                .itens(new ArrayList<>())
                 .build();
+
+        pedidoRepository.save(pedido);
 
         BigDecimal total = BigDecimal.ZERO;
 
@@ -37,7 +40,7 @@ public class PedidoService {
                     .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado"));
 
             if (produto.getEstoque() < item.getQuantidade()) {
-                throw new IllegalArgumentException("Estoque insuficiente para o produto: " + produto.getNome());
+                throw new IllegalArgumentException("Estoque insuficiente para: " + produto.getNome());
             }
 
             produto.setEstoque(produto.getEstoque() - item.getQuantidade());
@@ -46,6 +49,7 @@ public class PedidoService {
             item.setPedido(pedido);
             item.setPrecoUnitario(produto.getPreco());
             itemPedidoRepository.save(item);
+            pedido.getItens().add(item);
 
             total = total.add(produto.getPreco().multiply(BigDecimal.valueOf(item.getQuantidade())));
         }
