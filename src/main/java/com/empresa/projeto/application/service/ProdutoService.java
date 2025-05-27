@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -25,12 +26,15 @@ import java.math.BigDecimal;
 @CacheConfig(cacheNames = "produtos")
 public class ProdutoService {
 
+    private static final String CACHE_ALL = "'all'";
+    private static final String CACHE_CATEGORIA_PREFIX = "'categoria:'";
+
     private final ProdutoRepository repository;
 
     @Transactional
     @Caching(evict = {
-            @CacheEvict(key = "'all'"),
-            @CacheEvict(key = "'categoria:' + #result.categoriaId")
+            @CacheEvict(key = CACHE_ALL),
+            @CacheEvict(key = CACHE_CATEGORIA_PREFIX + "+ #result.categorias.![id]")
     })
     public ProdutoResponse criar(ProdutoRequest request) {
         validarDadosProduto(request);
@@ -41,64 +45,77 @@ public class ProdutoService {
                 .estoque(request.estoque())
                 .build();
 
-        return toResponse(repository.save(produto));
+        Produto produtoSalvo = repository.save(produto);
+        log.info("Produto criado: ID {}", produtoSalvo.getId());
+        return toResponse(produtoSalvo);
     }
 
-    @Cacheable(key = "'all'")
+    @Cacheable(key = CACHE_ALL)
     @Transactional(readOnly = true)
     public Page<ProdutoResponse> listarTodos(Pageable pageable) {
-        log.debug("Buscando todos os produtos no banco de dados");
-        return repository.findAll(pageable)
-                .map(this::toResponse);
+        log.debug("Consultando todos os produtos (paginado)");
+        return repository.findAll(pageable).map(this::toResponse);
     }
 
     @Cacheable(key = "#id")
     @Transactional(readOnly = true)
     public ProdutoResponse buscarPorId(Long id) {
-        log.debug("Buscando produto por ID: {}", id);
-        return repository.findById(id)
+        log.debug("Consultando produto ID: {}", id);
+        return repository.findByIdComCategorias(id)
                 .map(this::toResponse)
                 .orElseThrow(() -> new ProdutoNaoEncontradoException(id));
     }
 
-    @Cacheable(key = "'categoria:' + #categoriaId")
+    @Cacheable(key = CACHE_CATEGORIA_PREFIX + "+ #categoriaId")
     @Transactional(readOnly = true)
     public Page<ProdutoResponse> buscarPorCategoria(Long categoriaId, Pageable pageable) {
-        return repository.findByCategoriasId(categoriaId, pageable)
+        log.debug("Consultando produtos da categoria ID: {}", categoriaId);
+        return repository.findByCategoriaId(categoriaId, pageable)
                 .map(this::toResponse);
     }
 
     @Transactional
     @Caching(evict = {
             @CacheEvict(key = "#id"),
-            @CacheEvict(key = "'all'"),
-            @CacheEvict(key = "'categoria:' + #result.categoriaId")
+            @CacheEvict(key = CACHE_ALL),
+            @CacheEvict(key = CACHE_CATEGORIA_PREFIX + "+ #result.categorias.![id]")
     })
     public ProdutoResponse atualizar(Long id, ProdutoRequest request) {
         validarDadosProduto(request);
 
-        Produto produto = repository.findById(id)
+        Produto produto = repository.findByIdComCategorias(id)
                 .orElseThrow(() -> new ProdutoNaoEncontradoException(id));
 
         produto.setNome(request.nome());
         produto.setPreco(request.preco());
         produto.setEstoque(request.estoque());
 
+        log.info("Atualizando produto ID: {}", id);
         return toResponse(repository.save(produto));
     }
 
     @Transactional
     @Caching(evict = {
             @CacheEvict(key = "#id"),
-            @CacheEvict(key = "'all'"),
-            @CacheEvict(key = "'categoria:' + #result.categoriaId")
+            @CacheEvict(key = CACHE_ALL),
+            @CacheEvict(key = CACHE_CATEGORIA_PREFIX + "+ T(java.util.Collections).singletonList(#id)")
     })
     public void deletar(Long id) {
         if (!repository.existsById(id)) {
             throw new ProdutoNaoEncontradoException(id);
         }
+        log.info("Removendo produto ID: {}", id);
         repository.deleteById(id);
     }
+
+    @Transactional(readOnly = true)
+    public List<ProdutoResponse> listarComEstoqueCritico(Integer estoqueMinimo) {
+        log.debug("Consultando produtos com estoque abaixo de {}", estoqueMinimo);
+        return repository.findComEstoqueAbaixoDe(estoqueMinimo).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
 
     private ProdutoResponse toResponse(Produto produto) {
         return new ProdutoResponse(
