@@ -1,16 +1,15 @@
 package com.empresa.projeto.application.service;
 
-import com.empresa.projeto.application.dto.PedidoRequest;
-import com.empresa.projeto.application.dto.PedidoResponse;
-import com.empresa.projeto.application.exception.EstoqueInsuficienteException;
-import com.empresa.projeto.application.exception.PedidoNaoEncontradoException;
-import com.empresa.projeto.application.exception.RecursoNaoEncontradoException;
+import com.empresa.projeto.application.dto.*;
+import com.empresa.projeto.application.exception.*;
 import com.empresa.projeto.application.mapper.PedidoMapper;
 import com.empresa.projeto.domain.model.*;
 import com.empresa.projeto.domain.repository.*;
 import com.empresa.projeto.infrastructure.messaging.producer.PedidoProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,48 +29,91 @@ public class PedidoService {
     private final PedidoProducer pedidoProducer;
 
     @Transactional
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000))
     public PedidoResponse criar(PedidoRequest request) {
-        log.info("Criando novo pedido para o cliente: {}", request.clienteId());
+        try {
+            log.info("Criando pedido para cliente ID: {}", request.clienteId());
+            Pedido pedido = criarPedidoComItens(request);
+            enviarNotificacaoAssincrona(pedido);
+            return pedidoMapper.toResponse(pedido);
+        } catch (EstoqueInsuficienteException ex) {
+            log.error("Estoque insuficiente: {}", ex.getMessage());
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Falha ao criar pedido", ex);
+            throw new PedidoException("Falha ao processar pedido", ex);
+        }
+    }
 
+    @Transactional(readOnly = true)
+    public List<PedidoResponse> listarPorCliente(Long clienteId) {
+        return pedidoRepository.findByClienteId(clienteId).stream()
+                .map(pedidoMapper::toResponse)
+                .toList();
+    }
 
-        Pedido pedido = pedidoMapper.toEntity(request);
-        pedido.setCliente(usuarioRepository.findById(request.clienteId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente", request.clienteId())));
+    @Transactional(readOnly = true)
+    public PedidoResponse buscarPorId(Long id) {
+        return pedidoRepository.findByIdComItens(id)
+                .map(pedidoMapper::toResponse)
+                .orElseThrow(() -> new PedidoNaoEncontradoException(id));
+    }
 
+    @Transactional
+    public PedidoResponse atualizarStatus(Long id, Pedido.Status novoStatus) {
+        Pedido pedido = pedidoRepository.findByIdComItens(id)
+                .orElseThrow(() -> new PedidoNaoEncontradoException(id));
 
-        BigDecimal total = processarItensPedido(request, pedido);
-        pedido.setTotal(total);
+        validarTransicaoStatus(pedido.getStatus(), novoStatus);
+        pedidoRepository.atualizarStatus(id, novoStatus);
+        pedido.setStatus(novoStatus);
 
-
-        pedido = pedidoRepository.save(pedido);
-        log.info("Pedido {} criado com sucesso. Total: {}", pedido.getId(), pedido.getTotal());
-
-
-        pedidoProducer.notificarPedidoConcluido(pedido);
+        if (novoStatus == Pedido.Status.CONFIRMADO) {
+            enviarNotificacaoAssincrona(pedido);
+        }
 
         return pedidoMapper.toResponse(pedido);
     }
 
+    // --- Métodos Privados ---
+    private Pedido criarPedidoComItens(PedidoRequest request) {
+        Pedido pedido = pedidoMapper.toEntity(request);
+        pedido.setCliente(buscarCliente(request.clienteId()));
+
+        BigDecimal total = processarItensPedido(request, pedido);
+        pedido.setTotal(total);
+
+        return pedidoRepository.save(pedido);
+    }
+
+    private Usuario buscarCliente(Long clienteId) {
+        return usuarioRepository.findById(clienteId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente", clienteId));
+    }
+
     private BigDecimal processarItensPedido(PedidoRequest request, Pedido pedido) {
         BigDecimal total = BigDecimal.ZERO;
-        log.info("Processando {} itens para o pedido", request.itens().size());
-
         for (PedidoRequest.ItemPedidoRequest itemRequest : request.itens()) {
-            Produto produto = produtoRepository.findById(itemRequest.produtoId())
-                    .orElseThrow(() -> {
-                        log.error("Produto não encontrado: {}", itemRequest.produtoId());
-                        return new RecursoNaoEncontradoException("Produto", itemRequest.produtoId());
-                    });
-
+            Produto produto = buscarProduto(itemRequest.produtoId());
             validarEstoque(produto, itemRequest.quantidade());
+
             ItemPedido item = criarItemPedido(pedido, produto, itemRequest.quantidade());
             total = total.add(calcularSubtotal(item));
 
-
-            atualizarEstoque(produto, itemRequest.quantidade());
+            atualizarEstoqueProduto(produto, itemRequest.quantidade());
         }
-
         return total;
+    }
+
+    private Produto buscarProduto(Long produtoId) {
+        return produtoRepository.findById(produtoId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Produto", produtoId));
+    }
+
+    private void validarEstoque(Produto produto, Integer quantidade) {
+        if (produto.getEstoque() < quantidade) {
+            throw new EstoqueInsuficienteException(produto.getNome());
+        }
     }
 
     private ItemPedido criarItemPedido(Pedido pedido, Produto produto, Integer quantidade) {
@@ -81,64 +123,33 @@ public class PedidoService {
                 .quantidade(quantidade)
                 .precoUnitario(produto.getPreco())
                 .build();
-
-        itemPedidoRepository.save(item);
-        pedido.getItens().add(item);
-        log.debug("Item criado: {} unidades do produto {}", quantidade, produto.getId());
-
-        return item;
+        return itemPedidoRepository.save(item);
     }
 
-    private void validarEstoque(Produto produto, Integer quantidade) {
-        if (produto.getEstoque() < quantidade) {
-            log.warn("Estoque insuficiente para o produto {} (Estoque: {}, Solicitado: {})",
-                    produto.getId(), produto.getEstoque(), quantidade);
-            throw new EstoqueInsuficienteException(produto.getNome());
-        }
-    }
-
-    private void atualizarEstoque(Produto produto, Integer quantidade) {
+    private void atualizarEstoqueProduto(Produto produto, Integer quantidade) {
         produto.setEstoque(produto.getEstoque() - quantidade);
         produtoRepository.save(produto);
-        log.debug("Estoque atualizado para o produto {}. Novo estoque: {}", produto.getId(), produto.getEstoque());
     }
 
     private BigDecimal calcularSubtotal(ItemPedido item) {
         return item.getPrecoUnitario().multiply(BigDecimal.valueOf(item.getQuantidade()));
     }
 
-    @Transactional(readOnly = true)
-    public List<PedidoResponse> listarPorCliente(Long clienteId) {
-        log.info("Listando pedidos para o cliente: {}", clienteId);
-        return pedidoRepository.findByClienteId(clienteId).stream()
-                .map(pedidoMapper::toResponse)
-                .toList();
+    private void validarTransicaoStatus(Pedido.Status atual, Pedido.Status novo) {
+        if (atual == Pedido.Status.CANCELADO || atual == Pedido.Status.ENTREGUE) {
+            throw new IllegalStateException("Pedido finalizado não pode ser alterado");
+        }
+        if (novo == Pedido.Status.CRIADO) {
+            throw new IllegalStateException("Transição inválida para status 'CRIADO'");
+        }
     }
 
-    @Transactional(readOnly = true)
-    public PedidoResponse buscarPorId(Long id) {
-        log.info("Buscando pedido por ID: {}", id);
-        return pedidoRepository.findById(id)
-                .map(pedidoMapper::toResponse)
-                .orElseThrow(() -> {
-                    log.error("Pedido não encontrado: {}", id);
-                    return new PedidoNaoEncontradoException(id);
-                });
-    }
-
-    @Transactional
-    public PedidoResponse atualizarStatus(Long id, Pedido.Status status) {
-        log.info("Atualizando status do pedido {} para {}", id, status);
-        Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Pedido não encontrado para atualização: {}", id);
-                    return new PedidoNaoEncontradoException(id);
-                });
-
-        pedido.setStatus(status);
-        pedido = pedidoRepository.save(pedido);
-        log.info("Status do pedido {} atualizado para {}", id, status);
-
-        return pedidoMapper.toResponse(pedido);
+    private void enviarNotificacaoAssincrona(Pedido pedido) {
+        try {
+            PedidoNotificacaoDto notificacao = PedidoNotificacaoDto.from(pedido);
+            pedidoProducer.notificarPedidoConcluido(notificacao);
+        } catch (Exception ex) {
+            log.error("Falha ao enfileirar notificação para pedido {}", pedido.getId(), ex);
+        }
     }
 }
