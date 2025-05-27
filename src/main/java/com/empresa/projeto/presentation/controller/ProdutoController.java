@@ -33,4 +33,19 @@ public class ProdutoController {
     public ResponseEntity<ProdutoResponse> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(produtoService.buscarPorId(id));
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ProdutoResponse> atualizar(
+            @PathVariable Long id,
+            @RequestBody @Valid ProdutoRequest request) {
+        return ResponseEntity.ok(produtoService.atualizar(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        produtoService.deletar(id);
+        return ResponseEntity.noContent().build();
+    }
 }

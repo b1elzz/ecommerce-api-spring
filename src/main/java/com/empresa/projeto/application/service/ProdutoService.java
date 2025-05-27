@@ -47,4 +47,24 @@ public class ProdutoService {
                 .map(this::toResponse)
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado"));
     }
+
+    @Transactional
+    public ProdutoResponse atualizar(Long id, ProdutoRequest request) {
+        Produto produto = repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado"));
+
+        produto.setNome(request.nome());
+        produto.setPreco(request.preco());
+        produto.setEstoque(request.estoque());
+
+        return toResponse(repository.save(produto));
+    }
+
+    @Transactional
+    public void deletar(Long id) {
+        if (!repository.existsById(id)) {
+            throw new EntityNotFoundException("Produto não encontrado");
+        }
+        repository.deleteById(id);
+    }
 }
