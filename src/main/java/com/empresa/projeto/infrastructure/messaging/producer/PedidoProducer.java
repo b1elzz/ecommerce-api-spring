@@ -1,10 +1,12 @@
 package com.empresa.projeto.infrastructure.messaging.producer;
 
-import com.empresa.projeto.domain.model.Pedido;
+import com.empresa.projeto.application.dto.PedidoNotificacaoDto;
 import com.empresa.projeto.infrastructure.messaging.config.RabbitMQConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -13,16 +15,42 @@ import org.springframework.stereotype.Component;
 public class PedidoProducer {
 
     private final RabbitTemplate rabbitTemplate;
+    private static final int MAX_RETRY_ATTEMPTS = 3;
 
-    public void notificarPedidoConcluido(Pedido pedido) {
+    @Retryable(value = AmqpException.class, maxAttempts = MAX_RETRY_ATTEMPTS)
+    public void notificarPedidoConcluido(PedidoNotificacaoDto notificacaoDto) {
         try {
             rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.PEDIDO_CONCLUIDO_QUEUE,
-                    pedido
+                    RabbitMQConfig.PEDIDO_EXCHANGE,
+                    RabbitMQConfig.PEDIDO_ROUTING_KEY,
+                    notificacaoDto,
+                    message -> {
+                        message.getMessageProperties().setContentType("application/json");
+                        message.getMessageProperties().setCorrelationId(notificacaoDto.pedidoId().toString());
+                        return message;
+                    }
             );
-            log.info("Notificação enviada para o pedido: {}", pedido.getId());
-        } catch (Exception e) {
-            log.error("Falha ao enviar notificação para o pedido {}", pedido.getId(), e);
+        } catch (AmqpException ex) {
+            log.error("Falha crítica ao enviar pedido {} para a fila principal", notificacaoDto.pedidoId());
+            enviarParaDLQ(notificacaoDto, "Erro na fila principal: " + ex.getMessage());
+            throw ex;
+        }
+    }
+
+    private void enviarParaDLQ(PedidoNotificacaoDto notificacaoDto, String motivo) {
+        try {
+            rabbitTemplate.convertAndSend(
+                    "",
+                    RabbitMQConfig.PEDIDO_DLQ,
+                    notificacaoDto,
+                    message -> {
+                        message.getMessageProperties()
+                                .setHeader("X-Failure-Reason", motivo);
+                        return message;
+                    }
+            );
+        } catch (Exception ex) {
+            log.error("Falha CRÍTICA ao enviar pedido {} para DLQ", notificacaoDto.pedidoId(), ex);
         }
     }
 }

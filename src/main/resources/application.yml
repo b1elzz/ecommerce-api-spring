@@ -9,8 +9,18 @@ spring:
       connection-timeout: 2000
 
   rabbitmq:
-    queue:
-      pedido-concluido: pedidos.concluido
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000ms
+          max-interval: 10000ms
+          multiplier: 2.0
+        concurrency: 3
+        max-concurrency: 10
+        prefetch: 10
+        default-requeue-rejected: false
 
   jpa:
     hibernate:
@@ -27,6 +37,17 @@ spring:
 
 server:
   shutdown: graceful
+mail:
+  host: smtp.example.com
+  username: seu-email@example.com
+  password: sua-senha
+  port: 587
+  properties:
+    mail:
+      smtp:
+        auth: true
+        starttls:
+         enable: true
 
 management:
   endpoints:
