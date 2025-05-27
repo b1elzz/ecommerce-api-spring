@@ -2,9 +2,13 @@ package com.empresa.projeto.application.service;
 
 import com.empresa.projeto.application.dto.PedidoRequest;
 import com.empresa.projeto.application.dto.PedidoResponse;
+import com.empresa.projeto.application.exception.EstoqueInsuficienteException;
+import com.empresa.projeto.application.exception.PedidoNaoEncontradoException;
+import com.empresa.projeto.application.exception.RecursoNaoEncontradoException;
 import com.empresa.projeto.application.mapper.PedidoMapper;
 import com.empresa.projeto.domain.model.*;
 import com.empresa.projeto.domain.repository.*;
+import com.empresa.projeto.infrastructure.messaging.producer.PedidoProducer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,17 +25,21 @@ public class PedidoService {
     private final UsuarioRepository usuarioRepository;
     private final ItemPedidoRepository itemPedidoRepository;
     private final PedidoMapper pedidoMapper;
+    private final PedidoProducer pedidoProducer;
+
 
     @Transactional
     public PedidoResponse criar(PedidoRequest request) {
         Pedido pedido = pedidoMapper.toEntity(request);
         pedido.setCliente(usuarioRepository.findById(request.clienteId())
-                .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado")));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente", request.clienteId())));
 
         pedidoRepository.save(pedido);
-
+        pedidoProducer.notificarPedidoConcluido(pedido);
         processarItensPedido(request, pedido);
+
         return pedidoMapper.toResponse(pedidoRepository.save(pedido));
+
     }
 
     private void processarItensPedido(PedidoRequest request, Pedido pedido) {
@@ -39,7 +47,7 @@ public class PedidoService {
 
         for (PedidoRequest.ItemPedidoRequest itemRequest : request.itens()) {
             Produto produto = produtoRepository.findById(itemRequest.produtoId())
-                    .orElseThrow(() -> new IllegalArgumentException("Produto ID " + itemRequest.produtoId() + " não encontrado"));
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Produto", itemRequest.produtoId()));
 
             validarEstoque(produto, itemRequest.quantidade());
             atualizarEstoque(produto, itemRequest.quantidade());
@@ -66,7 +74,7 @@ public class PedidoService {
 
     private void validarEstoque(Produto produto, Integer quantidade) {
         if (produto.getEstoque() < quantidade) {
-            throw new IllegalArgumentException("Estoque insuficiente para produto: " + produto.getNome());
+            throw new EstoqueInsuficienteException(produto.getNome());
         }
     }
 
@@ -90,13 +98,13 @@ public class PedidoService {
     public PedidoResponse buscarPorId(Long id) {
         return pedidoRepository.findById(id)
                 .map(pedidoMapper::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Pedido ID " + id + " não encontrado"));
+                .orElseThrow(() -> new PedidoNaoEncontradoException(id));
     }
 
     @Transactional
     public PedidoResponse atualizarStatus(Long id, Pedido.Status status) {
         Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado"));
+                .orElseThrow(() -> new PedidoNaoEncontradoException(id));
 
         pedido.setStatus(status);
         return pedidoMapper.toResponse(pedidoRepository.save(pedido));

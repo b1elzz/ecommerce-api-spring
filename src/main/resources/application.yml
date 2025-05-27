@@ -8,6 +8,9 @@ spring:
       maximum-pool-size: 10
       connection-timeout: 2000
 
+  rabbitmq:
+    queue:
+    pedido-concluido: pedidos.concluido
   jpa:
     hibernate:
       ddl-auto: update
@@ -29,3 +32,5 @@ management:
     web:
       exposure:
         include: health
+
+

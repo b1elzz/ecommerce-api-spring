@@ -1,51 +1,102 @@
-# 🛒 Sistema de Pedidos com Pagamento e Notificação
+# 🛍️ E-commerce API - Spring Boot
 
-[![Java](https://img.shields.io/badge/Java-17-blue)]()
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.0-green)]()
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-orange)]()
+[![CI/CD](https://github.com/b1elzz/ecommerce-api-spring/actions/workflows/ci.yml/badge.svg)](https://github.com/b1elzz/ecommerce-api-spring/actions)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-85ea2d?logo=openapi)](https://localhost:8080/swagger-ui.html)
 
-## 🛠 Stack Tecnológico
+API completa para gerenciamento de e-commerce com processamento de pedidos, autenticação JWT e mensageria.
 
-| Camada           | Tecnologias                                                                 |
-|------------------|-----------------------------------------------------------------------------|
-| **Core**         | Java 17 • Spring Boot 3 • Lombok • MapStruct                                |
-| **Segurança**    | Spring Security • JWT • BCrypt                                              |
-| **Banco**        | PostgreSQL • Hibernate • Spring Data JPA                                    |
-| **Infra**        | Docker • Redis (cache) • RabbitMQ (mensageria)                              |
-| **CI/CD**        | GitHub Actions                                                              |
+## ✨ Funcionalidades Principais
 
-## Como Executar
+- ✅ Autenticação JWT com roles de usuário
+- 🛒 CRUD de produtos (apenas admin)
+- 📦 Fluxo completo de pedidos:
+    - Validação de estoque
+    - Cálculo automático de total
+    - Atualização de status
+    - Notificação via RabbitMQ
+- 🔒 Spring Security com proteção de endpoints
+- 📊 Cache com Redis para melhor performance
+- 📄 Documentação OpenAPI 3.0
 
-1. Clone o projeto:
+## 🚀 Tecnologias Utilizadas
+
+| Camada          | Tecnologias                                                                               |
+|-----------------|------------------------------------------------------------------------------------------|
+| **Core**        | Java 17 • Spring Boot 3.5 • Lombok • MapStruct • Hibernate                                |
+| **Segurança**   | Spring Security • JWT • BCrypt                                                      |
+| **Banco**       | PostgreSQL • Redis • Spring Data JPA                                                      |
+| **Mensageria**  | RabbitMQ • Spring AMQP                                                                    |
+| **Qualidade**   | PMD • SonarCloud • GitHub Actions                                                         |
+
+## ⚙️ Configuração do Ambiente
+
+### Pré-requisitos
+- Java 17+
+- Docker 20.10+
+- Gradle 7.6+
+
+### 🐳 Execução com Docker
 ```bash
-git clone https://github.com/seu-usuario/ecommerce-pedidos-spring.git
-```
+# 1. Clone o repositório
+git clone https://github.com/b1elzz/ecommerce-api-spring.git
+cd ecommerce-api-spring
 
-2. Inicie os containers:
-```bash
-docker-compose up -d
-```
+# 2. Inicie os containers
+docker-compose up -d --build
 
-3. Acesse:
-```
+# 3. Acesse a API
 http://localhost:8080
 ```
 
-## Variáveis de Ambiente
-Crie um arquivo `.env` na raiz com:
+### 🔧 Configuração Manual
+1. Crie o arquivo `.env` na raiz:
 ```ini
-JWT_SECRET=sua_chave_secreta_aqui
-DB_PASSWORD=senha_do_banco
+JWT_SECRET="sua_chave_secreta_aqui"
+DB_PASSWORD=postgres
 ```
 
-## Desenvolvimento
+2. Execute o projeto:
 ```bash
 ./gradlew bootRun
 ```
 
-## Testes
-```bash
-./gradlew test
+## 📚 Documentação da API (Ainda não implementado)
+
+Acesse a documentação interativa após iniciar a aplicação:
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI Spec: `http://localhost:8080/v3/api-docs`
+
+Exemplo de endpoints principais:
+```http
+POST /auth/registrar
+POST /auth/login
+GET /produtos
+POST /pedidos
+PATCH /pedidos/{id}/status
 ```
 
-> **Dica**: Configure seu IDE para usar Java 17 e Spring Boot 3.5+
+## 🔍 Estrutura do Projeto
+```
+projeto-raiz
+├── src/main/java
+│   ├── application       # DTOs, serviços e mapeamentos
+│   ├── domain            # Entidades e repositories
+│   ├── infrastructure    # Configurações técnicas
+│   └── presentation      # Controllers e tratamento de erros
+└── docker-compose.yml    # Ambiente de desenvolvimento
+```
+
+## 🧪 Testes & Qualidade
+```bash
+# Executar testes unitários (Ainda não implementado)
+./gradlew test
+
+# Verificar qualidade do código
+./gradlew pmdMain sonarqube
+
+# Gerar relatório de cobertura
+./gradlew jacocoTestReport
+```
+
+---
