@@ -38,7 +38,7 @@ public class PedidoConsumer {
                 return;
             }
 
-            Pedido pedido = pedidoRepository.findById(notificacao.pedidoId())
+            Pedido pedido = pedidoRepository.findByIdComCliente(notificacao.pedidoId())
                     .orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado"));
 
             notificacaoService.processarNotificacaoPedido(

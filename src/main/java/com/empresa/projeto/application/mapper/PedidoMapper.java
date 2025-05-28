@@ -8,7 +8,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,4 +43,6 @@ public interface PedidoMapper {
     @Mapping(target = "produtoNome", source = "produto.nome")
     @Mapping(target = "subtotal", expression = "java(item.getPrecoUnitario().multiply(BigDecimal.valueOf(item.getQuantidade())))")
     PedidoResponse.ItemPedidoResponse mapItem(ItemPedido item);
+
+
 }

@@ -60,8 +60,7 @@ public class ProdutoService {
     @Cacheable(key = "#id")
     @Transactional(readOnly = true)
     public ProdutoResponse buscarPorId(Long id) {
-        log.debug("Consultando produto ID: {}", id);
-        return repository.findByIdComCategorias(id)
+        return repository.findById(id)
                 .map(this::toResponse)
                 .orElseThrow(() -> new ProdutoNaoEncontradoException(id));
     }

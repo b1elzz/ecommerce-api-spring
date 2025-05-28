@@ -23,6 +23,7 @@ public class Pedido {
     private Usuario cliente;
 
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<ItemPedido> itens = new ArrayList<>();
 
     @Column(nullable = false)
@@ -34,12 +35,15 @@ public class Pedido {
     @Enumerated(EnumType.STRING)
     private Status status;
 
+
+
     public enum Status {
         CRIADO,
         PAGO,
         CONFIRMADO,
         ENVIADO,
         ENTREGUE,
-        CANCELADO
+        CANCELADO,
+        FALHA_NOTIFICACAO
     }
 }

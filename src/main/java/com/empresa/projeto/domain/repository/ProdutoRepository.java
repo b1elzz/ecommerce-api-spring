@@ -32,4 +32,6 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
 
     @Query("SELECT p FROM Produto p JOIN FETCH p.categorias")
     List<Produto> findAllComCategorias();
+
+
 }
