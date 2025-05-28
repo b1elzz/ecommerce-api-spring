@@ -1,6 +1,6 @@
 package com.empresa.projeto.application.service;
 
-import com.empresa.projeto.application.dto.PedidoNotificacaoDto;
+import com.empresa.projeto.application.dto.response.PedidoNotificacaoDto;
 import com.empresa.projeto.domain.model.Pedido;
 import com.empresa.projeto.domain.repository.PedidoRepository;
 import com.empresa.projeto.infrastructure.messaging.producer.PedidoProducer;

@@ -1,6 +1,6 @@
 package com.empresa.projeto.infrastructure.messaging.producer;
 
-import com.empresa.projeto.application.dto.PedidoNotificacaoDto;
+import com.empresa.projeto.application.dto.response.PedidoNotificacaoDto;
 import com.empresa.projeto.infrastructure.messaging.config.RabbitMQConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

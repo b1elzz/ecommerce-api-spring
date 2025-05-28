@@ -1,4 +1,4 @@
-package com.empresa.projeto.application.dto;
+package com.empresa.projeto.application.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;

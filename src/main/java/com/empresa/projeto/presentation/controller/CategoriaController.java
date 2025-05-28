@@ -1,7 +1,7 @@
 package com.empresa.projeto.presentation.controller;
 
-import com.empresa.projeto.application.dto.CategoriaRequest;
-import com.empresa.projeto.application.dto.CategoriaResponse;
+import com.empresa.projeto.application.dto.request.CategoriaRequest;
+import com.empresa.projeto.application.dto.response.CategoriaResponse;
 import com.empresa.projeto.application.service.CategoriaService;
 import com.empresa.projeto.domain.model.Categoria;
 import jakarta.validation.Valid;

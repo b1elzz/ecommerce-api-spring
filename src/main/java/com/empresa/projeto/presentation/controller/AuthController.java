@@ -1,8 +1,8 @@
 package com.empresa.projeto.presentation.controller;
 
-import com.empresa.projeto.application.dto.AuthLoginRequest;
-import com.empresa.projeto.application.dto.AuthRegisterRequest;
-import com.empresa.projeto.application.dto.AuthResponse;
+import com.empresa.projeto.application.dto.request.AuthLoginRequest;
+import com.empresa.projeto.application.dto.request.AuthRegisterRequest;
+import com.empresa.projeto.application.dto.response.AuthResponse;
 import com.empresa.projeto.application.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

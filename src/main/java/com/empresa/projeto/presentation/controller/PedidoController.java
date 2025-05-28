@@ -1,7 +1,7 @@
 package com.empresa.projeto.presentation.controller;
 
-import com.empresa.projeto.application.dto.PedidoRequest;
-import com.empresa.projeto.application.dto.PedidoResponse;
+import com.empresa.projeto.application.dto.request.PedidoRequest;
+import com.empresa.projeto.application.dto.response.PedidoResponse;
 import com.empresa.projeto.application.service.PedidoService;
 import com.empresa.projeto.domain.model.Pedido;
 import jakarta.validation.Valid;

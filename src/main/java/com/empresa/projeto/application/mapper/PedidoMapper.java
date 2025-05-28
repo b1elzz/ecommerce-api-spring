@@ -1,7 +1,7 @@
 package com.empresa.projeto.application.mapper;
 
-import com.empresa.projeto.application.dto.PedidoRequest;
-import com.empresa.projeto.application.dto.PedidoResponse;
+import com.empresa.projeto.application.dto.request.PedidoRequest;
+import com.empresa.projeto.application.dto.response.PedidoResponse;
 import com.empresa.projeto.domain.model.ItemPedido;
 import com.empresa.projeto.domain.model.Pedido;
 import org.mapstruct.Mapper;

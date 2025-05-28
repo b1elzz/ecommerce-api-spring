@@ -1,8 +1,8 @@
 package com.empresa.projeto.application.service;
 
-import com.empresa.projeto.application.dto.AuthLoginRequest;
-import com.empresa.projeto.application.dto.AuthRegisterRequest;
-import com.empresa.projeto.application.dto.AuthResponse;
+import com.empresa.projeto.application.dto.request.AuthLoginRequest;
+import com.empresa.projeto.application.dto.request.AuthRegisterRequest;
+import com.empresa.projeto.application.dto.response.AuthResponse;
 import com.empresa.projeto.application.exception.UsuarioJaExisteException;
 import com.empresa.projeto.domain.model.Usuario;
 import com.empresa.projeto.domain.repository.UsuarioRepository;

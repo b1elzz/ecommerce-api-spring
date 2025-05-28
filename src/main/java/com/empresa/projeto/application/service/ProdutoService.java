@@ -1,7 +1,7 @@
 package com.empresa.projeto.application.service;
 
-import com.empresa.projeto.application.dto.ProdutoRequest;
-import com.empresa.projeto.application.dto.ProdutoResponse;
+import com.empresa.projeto.application.dto.request.ProdutoRequest;
+import com.empresa.projeto.application.dto.response.ProdutoResponse;
 import com.empresa.projeto.application.exception.EstoqueNegativoException;
 import com.empresa.projeto.application.exception.ProdutoNaoEncontradoException;
 import com.empresa.projeto.domain.model.Categoria;

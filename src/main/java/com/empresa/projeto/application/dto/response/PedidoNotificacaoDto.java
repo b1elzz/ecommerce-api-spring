@@ -1,4 +1,4 @@
-package com.empresa.projeto.application.dto;
+package com.empresa.projeto.application.dto.response;
 
 import com.empresa.projeto.domain.model.Pedido;
 import com.empresa.projeto.domain.model.Usuario;

@@ -22,21 +22,27 @@ spring:
 
   cache:
     redis:
-      time-to-live: 1800000
+      time-to-live: 300000
       host: localhost
       port: 6379
 
 
   mail:
-    host: ${SMTP_HOST:}
-    username: ${SMTP_USER:}
-    password: ${SMTP_PASSWORD:}
-    port: ${SMTP_PORT:}
+    host: ${SMTP_HOST}
+    port: ${SMTP_PORT}
+    username: ${SMTP_USER}
+    password: ${SMTP_PASSWORD}
     properties:
       mail:
         smtp:
-          auth: ${SMTP_AUTH:false}
-          starttls.enable: ${SMTP_STARTTLS:false}
+          auth: ${SMTP_AUTH}
+          from: app@example.com
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+          starttls:
+            enable: ${SMTP_STARTTLS}
+
 
 
   jpa:

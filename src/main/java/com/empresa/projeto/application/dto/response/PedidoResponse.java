@@ -1,4 +1,4 @@
-package com.empresa.projeto.application.dto;
+package com.empresa.projeto.application.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

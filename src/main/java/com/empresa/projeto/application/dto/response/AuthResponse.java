@@ -1,4 +1,4 @@
-package com.empresa.projeto.application.dto;
+package com.empresa.projeto.application.dto.response;
 
 public record AuthResponse(
         String token,
