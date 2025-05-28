@@ -2,101 +2,90 @@
 
 [![CI/CD](https://github.com/b1elzz/ecommerce-api-spring/actions/workflows/ci.yml/badge.svg)](https://github.com/b1elzz/ecommerce-api-spring/actions)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-85ea2d?logo=openapi)](https://localhost:8080/swagger-ui.html)
+[![Java](https://img.shields.io/badge/Java-17-007396?logo=java)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?logo=spring)](https://spring.io/projects/spring-boot)
 
-API completa para gerenciamento de e-commerce com processamento de pedidos, autenticação JWT e mensageria.
+API completa para gerenciamento de e-commerce com arquitetura escalável e boas práticas de desenvolvimento.
 
-## ✨ Funcionalidades Principais
+## ✅ Funcionalidades Implementadas
 
-- ✅ Autenticação JWT com roles de usuário
-- 🛒 CRUD de produtos (apenas admin)
-- 📦 Fluxo completo de pedidos:
-    - Validação de estoque
-    - Cálculo automático de total
-    - Atualização de status
-    - Notificação via RabbitMQ
-- 🔒 Spring Security com proteção de endpoints
-- 📊 Cache com Redis para melhor performance
-- 📄 Documentação OpenAPI 3.0
+- 🔐 **Autenticação JWT**  
+  - Registro e login com tokens  
+  - Roles (USER/ADMIN)  
+  - Proteção de endpoints com Spring Security
 
-## 🚀 Tecnologias Utilizadas
+- 🛒 **Gestão de Produtos**  
+  - CRUD completo com validações  
+  - Controle de estoque  
+  - Associação com categorias
 
-| Camada          | Tecnologias                                                                               |
+- 📦 **Fluxo de Pedidos**  
+  - Criação com cálculo automático de total  
+  - Validação de estoque em tempo real  
+  - Integração com RabbitMQ para notificações  
+  - Dead Letter Queue para tratamento de falhas
+
+- ⚡ **Performance**  
+  - Cache com Redis para consultas frequentes  
+  - Paginação e filtros
+
+## 🛠️ Stack Tecnológica Confirmada
+
+| Camada          | Tecnologias Implementadas                                                                 |
 |-----------------|------------------------------------------------------------------------------------------|
-| **Core**        | Java 17 • Spring Boot 3.5 • Lombok • MapStruct • Hibernate                                |
-| **Segurança**   | Spring Security • JWT • BCrypt                                                      |
-| **Banco**       | PostgreSQL • Redis • Spring Data JPA                                                      |
-| **Mensageria**  | RabbitMQ • Spring AMQP                                                                    |
-| **Qualidade**   | PMD • SonarCloud • GitHub Actions                                                         |
+| **Backend**     | Java 17 • Spring Boot 3.5 • Spring Data JPA • Hibernate Validator                        |
+| **Segurança**   | Spring Security • JWT • BCrypt                                                           |
+| **Banco**       | PostgreSQL • Redis                                                                       |
+| **Mensageria**  | RabbitMQ (com DLQ)                                                                       |
+| **DevOps**      | Docker • GitHub Actions • PMD                                                            |
+| **Produtividade**| Lombok • MapStruct • Gradle                                                             |
 
-## ⚙️ Configuração do Ambiente
+## ⚠️ Pendências (Por Implementar)
 
-### Pré-requisitos
-- Java 17+
-- Docker 20.10+
-- Gradle 7.6+
+- [ ] Documentação Swagger/OpenAPI
+- [ ] Testes unitários abrangentes
+- [ ] Integração contínua com SonarCloud
+- [ ] Sistema de refresh token
+
+## ⚙️ Primeiros Passos
 
 ### 🐳 Execução com Docker
 ```bash
-# 1. Clone o repositório
-git clone https://github.com/b1elzz/ecommerce-api-spring.git
-cd ecommerce-api-spring
-
-# 2. Inicie os containers
 docker-compose up -d --build
-
-# 3. Acesse a API
-http://localhost:8080
 ```
+Acesse:
+- API: http://localhost:8080
+- RabbitMQ: http://localhost:15672 (admin/admin123!)
 
-### 🔧 Configuração Manual
-1. Crie o arquivo `.env` na raiz:
-```ini
-JWT_SECRET="sua_chave_secreta_aqui"
-DB_PASSWORD=postgres
-```
+### 📚 Endpoints Principais
 
-2. Execute o projeto:
-```bash
-./gradlew bootRun
-```
-
-## 📚 Documentação da API (Ainda não implementado)
-
-Acesse a documentação interativa após iniciar a aplicação:
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- OpenAPI Spec: `http://localhost:8080/v3/api-docs`
-
-Exemplo de endpoints principais:
 ```http
+### Autenticação
 POST /auth/registrar
 POST /auth/login
+
+### Produtos (Admin)
 GET /produtos
+POST /produtos
+PUT /produtos/{id}
+
+### Pedidos (User)
 POST /pedidos
-PATCH /pedidos/{id}/status
+GET /pedidos/{id}
 ```
 
-## 🔍 Estrutura do Projeto
+## 🏗️ Estrutura do Código (Atual)
+
 ```
-projeto-raiz
-├── src/main/java
-│   ├── application       # DTOs, serviços e mapeamentos
-│   ├── domain            # Entidades e repositories
-│   ├── infrastructure    # Configurações técnicas
-│   └── presentation      # Controllers e tratamento de erros
-└── docker-compose.yml    # Ambiente de desenvolvimento
-```
-
-## 🧪 Testes & Qualidade
-```bash
-# Executar testes unitários (Ainda não implementado)
-./gradlew test
-
-# Verificar qualidade do código
-./gradlew pmdMain sonarqube
-
-# Gerar relatório de cobertura
-./gradlew jacocoTestReport
+src/
+├── main/
+│   ├── java/
+│   │   ├── application/       # DTOs e serviços
+│   │   ├── domain/            # Entidades e repositories
+│   │   ├── infrastructure/    # Configurações técnicas
+│   │   └── presentation/      # Controllers
+└── docker-compose.yml         # Containers essenciais
 ```
 
----
+## 📄 Licença
+MIT License - [LICENSE](LICENSE)
