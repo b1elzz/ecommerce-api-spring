@@ -4,7 +4,9 @@ import com.empresa.projeto.application.dto.ProdutoRequest;
 import com.empresa.projeto.application.dto.ProdutoResponse;
 import com.empresa.projeto.application.exception.EstoqueNegativoException;
 import com.empresa.projeto.application.exception.ProdutoNaoEncontradoException;
+import com.empresa.projeto.domain.model.Categoria;
 import com.empresa.projeto.domain.model.Produto;
+import com.empresa.projeto.domain.repository.CategoriaRepository;
 import com.empresa.projeto.domain.repository.ProdutoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +32,7 @@ public class ProdutoService {
     private static final String CACHE_CATEGORIA_PREFIX = "'categoria:'";
 
     private final ProdutoRepository repository;
+    private final CategoriaRepository categoriaRepository;
 
     @Transactional
     @Caching(evict = {
@@ -82,7 +85,8 @@ public class ProdutoService {
     public ProdutoResponse atualizar(Long id, ProdutoRequest request) {
         validarDadosProduto(request);
 
-        Produto produto = repository.findByIdComCategorias(id)
+
+        Produto produto = repository.findById(id)
                 .orElseThrow(() -> new ProdutoNaoEncontradoException(id));
 
         produto.setNome(request.nome());
@@ -115,6 +119,23 @@ public class ProdutoService {
                 .toList();
     }
 
+
+
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(key = "#produtoId"),
+            @CacheEvict(key = CACHE_ALL),
+            @CacheEvict(key = CACHE_CATEGORIA_PREFIX + "+ #categoriaIds")
+    })
+    public ProdutoResponse adicionarCategorias(Long produtoId, List<Long> categoriaIds) {
+        Produto produto = repository.findById(produtoId)
+                .orElseThrow(() -> new ProdutoNaoEncontradoException(produtoId));
+
+        List<Categoria> categorias = categoriaRepository.findAllById(categoriaIds);
+        produto.getCategorias().addAll(categorias);
+
+        return toResponse(repository.save(produto));
+    }
 
     private ProdutoResponse toResponse(Produto produto) {
         return new ProdutoResponse(

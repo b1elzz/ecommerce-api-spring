@@ -27,6 +27,7 @@ public class PedidoService {
     private final ItemPedidoRepository itemPedidoRepository;
     private final PedidoMapper pedidoMapper;
     private final PedidoProducer pedidoProducer;
+    private final CategoriaRepository categoriaRepository;
 
     @Transactional
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000))
@@ -75,7 +76,7 @@ public class PedidoService {
         return pedidoMapper.toResponse(pedido);
     }
 
-    // --- Métodos Privados ---
+
     private Pedido criarPedidoComItens(PedidoRequest request) {
         Pedido pedido = pedidoMapper.toEntity(request);
         pedido.setCliente(buscarCliente(request.clienteId()));
@@ -152,4 +153,6 @@ public class PedidoService {
             log.error("Falha ao enfileirar notificação para pedido {}", pedido.getId(), ex);
         }
     }
+
+
 }

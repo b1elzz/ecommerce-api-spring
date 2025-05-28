@@ -15,7 +15,8 @@ import java.util.Optional;
 @Repository
 public interface ProdutoRepository extends JpaRepository<Produto, Long> {
 
-    @Query("SELECT p FROM Produto p JOIN FETCH p.categorias WHERE p.id = :id")
+
+    @Query("SELECT p FROM Produto p LEFT JOIN FETCH p.categorias WHERE p.id = :id")
     Optional<Produto> findByIdComCategorias(@Param("id") Long id);
 
     @Query("SELECT p FROM Produto p JOIN p.categorias c WHERE c.id = :categoriaId")

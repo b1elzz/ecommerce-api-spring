@@ -1,4 +1,5 @@
 spring:
+
   datasource:
     url: jdbc:postgresql://localhost:5432/projeto
     username: postgres
@@ -6,53 +7,74 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
-      connection-timeout: 2000
+      connection-timeout: 5000
+
 
   rabbitmq:
     queue:
       pedido-concluido: pedidos.concluido
-    listener:
-      simple:
-        retry:
-          enabled: true
-          max-attempts: 3
-          initial-interval: 1000ms
-          max-interval: 10000ms
-          multiplier: 2.0
-        concurrency: 3
-        max-concurrency: 10
-        prefetch: 10
-        default-requeue-rejected: false
+    host: localhost
+    port: 5672
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:admin123!}
+    connection-timeout: 5000
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
 
   cache:
     redis:
       time-to-live: 1800000
+      host: localhost
+      port: 6379
 
-server:
-  shutdown: graceful
-mail:
-  host: smtp.example.com
-  username: seu-email@example.com
-  password: sua-senha
-  port: 587
-  properties:
-    mail:
-      smtp:
-        auth: true
-        starttls:
-         enable: true
+
+  mail:
+    host: ${SMTP_HOST:}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    port: ${SMTP_PORT:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SMTP_AUTH:false}
+          starttls.enable: ${SMTP_STARTTLS:false}
+
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: ${SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
 
 management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,metrics,env,beans
+  endpoint:
+    health:
+      show-details: always
+      db:
+        enabled: true
+      redis:
+        enabled: true
+      rabbit:
+        enabled: true
+
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+    com.empresa: DEBUG
+  file:
+    name: logs/application.log
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

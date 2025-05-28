@@ -63,4 +63,13 @@ public class ProdutoController {
             @RequestParam(defaultValue = "5") Integer estoqueMinimo) {
         return ResponseEntity.ok(produtoService.listarComEstoqueCritico(estoqueMinimo));
     }
+
+
+    @PutMapping("/{id}/categorias")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ProdutoResponse> adicionarCategorias(
+            @PathVariable Long id,
+            @RequestBody List<Long> categoriaIds) {
+        return ResponseEntity.ok(produtoService.adicionarCategorias(id, categoriaIds));
+    }
 }
