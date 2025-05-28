@@ -8,17 +8,17 @@ import org.springframework.web.bind.annotation.RestController;
 import java.math.BigDecimal;
 
 @RestController
-@RequestMapping("/teste-email")
-public class TesteEmailController {
+@RequestMapping("/teste-email-html")
+public class TesteEmailHtmlController {
 
     private final NotificacaoService notificacaoService;
 
-    public TesteEmailController(NotificacaoService notificacaoService) {
+    public TesteEmailHtmlController(NotificacaoService notificacaoService) {
         this.notificacaoService = notificacaoService;
     }
 
     @GetMapping
-    public String testarEmail() {
+    public String testarEmailHtml() {
         notificacaoService.processarNotificacaoPedido(
                 999L,
                 new BigDecimal("199.90"),
@@ -26,6 +26,6 @@ public class TesteEmailController {
                 "email_de_teste@dominio.com",
                 "Cliente Teste"
         );
-        return "E-mail de teste disparado!";
+        return "E-mail HTML disparado!";
     }
 }
