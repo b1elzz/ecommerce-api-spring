@@ -66,6 +66,11 @@ springdoc:
     tags-sorter: alpha
   model-and-view-allowed: true
   disable-i18n: true
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  model-converters:
+      pageable-converter:
+        enabled: true
 
 management:
   endpoints:

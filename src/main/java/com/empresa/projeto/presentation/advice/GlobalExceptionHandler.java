@@ -2,10 +2,10 @@ package com.empresa.projeto.presentation.advice;
 
 import com.empresa.projeto.application.exception.ErroResponse;
 import com.empresa.projeto.application.exception.*;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -15,13 +15,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Collectors;
 
+@Hidden
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -33,7 +31,6 @@ public class GlobalExceptionHandler {
         return construirErroResponse(HttpStatus.BAD_REQUEST, mensagem, request);
     }
 
-
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErroResponse handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest request) {
@@ -43,7 +40,6 @@ public class GlobalExceptionHandler {
 
         return construirErroResponse(HttpStatus.BAD_REQUEST, mensagem, request);
     }
-
 
     @ExceptionHandler({
             RecursoNaoEncontradoException.class,
@@ -71,7 +67,6 @@ public class GlobalExceptionHandler {
         return construirErroResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
-
     @ExceptionHandler(BadCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErroResponse handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
@@ -84,7 +79,6 @@ public class GlobalExceptionHandler {
         return construirErroResponse(HttpStatus.FORBIDDEN, "Acesso negado", request);
     }
 
-
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErroResponse handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
@@ -94,19 +88,16 @@ public class GlobalExceptionHandler {
         return construirErroResponse(HttpStatus.BAD_REQUEST, mensagem, request);
     }
 
-
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErroResponse> handleGenericException(Exception ex, HttpServletRequest request) {
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErroResponse handleGenericException(Exception ex, HttpServletRequest request) {
         String mensagem = "Ocorreu um erro interno no servidor";
 
         if (ex instanceof IllegalArgumentException) {
-            status = HttpStatus.BAD_REQUEST;
             mensagem = ex.getMessage();
         }
 
-        return ResponseEntity.status(status)
-                .body(construirErroResponse(status, mensagem, request));
+        return construirErroResponse(HttpStatus.INTERNAL_SERVER_ERROR, mensagem, request);
     }
 
     private ErroResponse construirErroResponse(HttpStatus status, String message, HttpServletRequest request) {
@@ -118,5 +109,4 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
     }
-
 }
