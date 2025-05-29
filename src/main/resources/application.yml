@@ -2,48 +2,43 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/projeto
-    username: postgres
-    password: postgres
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
       connection-timeout: 5000
 
-
   rabbitmq:
-    queue:
-      pedido-concluido: pedidos.concluido
     host: localhost
     port: 5672
     username: ${RABBITMQ_USER:admin}
     password: ${RABBITMQ_PASSWORD:admin123!}
     connection-timeout: 5000
-
+    queue:
+      pedido-concluido: pedidos.concluido
 
   cache:
     redis:
-      time-to-live: 300000
       host: localhost
       port: 6379
-
+      time-to-live: 300000
 
   mail:
-    host: ${SMTP_HOST}
-    port: ${SMTP_PORT}
-    username: ${SMTP_USER}
-    password: ${SMTP_PASSWORD}
+    host: ${SMTP_HOST:smtp.example.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:your_email@example.com}
+    password: ${SMTP_PASSWORD:your_password}
     properties:
       mail:
         smtp:
-          auth: ${SMTP_AUTH}
+          auth: ${SMTP_AUTH:true}
           from: app@example.com
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
           starttls:
-            enable: ${SMTP_STARTTLS}
-
-
+            enable: ${SMTP_STARTTLS:true}
 
   jpa:
     hibernate:
@@ -56,6 +51,15 @@ spring:
           lob:
             non_contextual_creation: true
 
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
 
 management:
   endpoints:
@@ -71,11 +75,7 @@ management:
         enabled: true
       rabbit:
         enabled: true
-  api-docs:
-    path: /v3/api-docs
-    swagger-ui:
-      path: /swagger-ui.html
-      enabled: true
+
 
 logging:
   level:
@@ -84,6 +84,7 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql: TRACE
     com.empresa: DEBUG
+    org.springdoc: DEBUG
   file:
     name: logs/application.log
   pattern:
