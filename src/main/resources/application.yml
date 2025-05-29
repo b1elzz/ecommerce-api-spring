@@ -60,6 +60,8 @@ springdoc:
     enabled: true
     operations-sorter: method
     tags-sorter: alpha
+  model-and-view-allowed: true
+  disable-i18n: true
 
 management:
   endpoints:
