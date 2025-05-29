@@ -29,6 +29,7 @@ import java.util.List;
 public class ProdutoService {
 
     private static final String CACHE_ALL = "'all'";
+    private static final String CACHE_PRODUTO_PREFIX = "'produto:'";
     private static final String CACHE_CATEGORIA_PREFIX = "'categoria:'";
 
     private final ProdutoRepository repository;
@@ -41,28 +42,27 @@ public class ProdutoService {
     })
     public ProdutoResponse criar(ProdutoRequest request) {
         validarDadosProduto(request);
-
         Produto produto = Produto.builder()
                 .nome(request.nome())
                 .preco(request.preco())
                 .estoque(request.estoque())
                 .build();
-
         Produto produtoSalvo = repository.save(produto);
         log.info("Produto criado: ID {}", produtoSalvo.getId());
         return toResponse(produtoSalvo);
     }
 
-    @Cacheable(key = CACHE_ALL)
+    @Cacheable(key = CACHE_ALL, sync = true)
     @Transactional(readOnly = true)
     public Page<ProdutoResponse> listarTodos(Pageable pageable) {
         log.debug("Consultando todos os produtos (paginado)");
         return repository.findAll(pageable).map(this::toResponse);
     }
 
-    @Cacheable(key = "#id")
+    @Cacheable(key = CACHE_PRODUTO_PREFIX + "+ #id", unless = "#result == null")
     @Transactional(readOnly = true)
     public ProdutoResponse buscarPorId(Long id) {
+        log.debug("Buscando produto por ID: {}", id);
         return repository.findById(id)
                 .map(this::toResponse)
                 .orElseThrow(() -> new ProdutoNaoEncontradoException(id));
