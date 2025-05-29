@@ -8,11 +8,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -28,13 +30,14 @@ public class PedidoConsumer {
     @RabbitListener(queues = "${spring.rabbitmq.queue.pedido-concluido}")
     public void consumirMensagem(
             PedidoNotificacaoDto notificacao,
-            @Header(value = "x-death", required = false) Map<String, Object> deathHeader) {
+            @Header(value = "x-death", required = false) Map<String, Object> deathHeader,
+            @Header(AmqpHeaders.CORRELATION_ID) String correlationId) {
 
         try {
-            log.info("Processando notificação do pedido: {}", notificacao.pedidoId());
+            log.info("Processando pedido (CorrelationID: {}): {}", correlationId, notificacao.pedidoId());
 
             if (isMaxRetriesExceeded(deathHeader)) {
-                handleMaxRetriesExceeded(notificacao);
+                handleMaxRetriesExceeded(notificacao, correlationId);
                 return;
             }
 
@@ -49,30 +52,33 @@ public class PedidoConsumer {
                     pedido.getCliente().getNome()
             );
 
-            log.info("Notificação processada com sucesso para o pedido {}", notificacao.pedidoId());
-
         } catch (Exception ex) {
-            log.error("Falha ao processar pedido {} - Tentativa {}/{}",
+            log.error("Falha ao processar pedido {} (CorrelationID: {}) - Tentativa {}/{} - Erro: {}",
                     notificacao.pedidoId(),
+                    correlationId,
                     getCurrentAttempt(deathHeader),
                     MAX_ATTEMPTS,
-                    ex);
+                    ex.getMessage());
             throw new AmqpRejectAndDontRequeueException("Erro no processamento");
         }
     }
 
+
     private boolean isMaxRetriesExceeded(Map<String, Object> deathHeader) {
         if (deathHeader == null) return false;
-        Integer count = (Integer) deathHeader.get("count");
+        Integer count = (Integer) ((List<Map<String, Object>>) deathHeader.get("count")).get(0).get("count");
         return count != null && count >= MAX_ATTEMPTS;
     }
 
     private int getCurrentAttempt(Map<String, Object> deathHeader) {
-        return deathHeader != null ? (Integer) deathHeader.getOrDefault("count", 0) + 1 : 1;
+        if (deathHeader == null) return 1;
+        Integer count = (Integer) ((List<Map<String, Object>>) deathHeader.get("count")).get(0).get("count");
+        return (count != null) ? count + 1 : 1;
     }
 
-    private void handleMaxRetriesExceeded(PedidoNotificacaoDto notificacao) {
-        log.warn("Máximo de tentativas excedido para o pedido {}", notificacao.pedidoId());
+    private void handleMaxRetriesExceeded(PedidoNotificacaoDto notificacao, String correlationId) {
+        log.warn("Máximo de tentativas excedido para pedido {} (CorrelationID: {})",
+                notificacao.pedidoId(), correlationId);
         notificacaoService.registrarFalhaPermanente(notificacao);
     }
 }
