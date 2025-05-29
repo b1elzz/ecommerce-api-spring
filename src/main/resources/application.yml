@@ -71,7 +71,11 @@ management:
         enabled: true
       rabbit:
         enabled: true
-
+  api-docs:
+    path: /v3/api-docs
+    swagger-ui:
+      path: /swagger-ui.html
+      enabled: true
 
 logging:
   level:

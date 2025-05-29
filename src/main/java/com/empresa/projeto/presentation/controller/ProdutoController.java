@@ -3,6 +3,9 @@ package com.empresa.projeto.presentation.controller;
 import com.empresa.projeto.application.dto.request.ProdutoRequest;
 import com.empresa.projeto.application.dto.response.ProdutoResponse;
 import com.empresa.projeto.application.service.ProdutoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +29,10 @@ public class ProdutoController {
         return ResponseEntity.ok(produtoService.criar(request));
     }
 
+    @Operation(summary = "Listar produtos", description = "Retorna todos os produtos paginados")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Produtos listados com sucesso")
+    })
     @GetMapping
     public ResponseEntity<Page<ProdutoResponse>> listarTodos(Pageable pageable) {
         return ResponseEntity.ok(produtoService.listarTodos(pageable));
